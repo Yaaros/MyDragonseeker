@@ -37,7 +37,7 @@ public class epicDragonseekerItem extends dragonseekerGeneric {
 
     //Constructor
     public epicDragonseekerItem() {
-        super(150,225,.08,.9,125,1.5,.05,.4,.5,.8,negSound,pingSound,true,false,durability,rarity,repairItem,seekerType);
+        super(100, 100, 0, 1, 100, 1.5, 0.05, 0.4, 0.5, 0.8, negSound, pingSound, true, false, durability, rarity, repairItem, seekerType);
     }
 
 }

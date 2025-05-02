@@ -15,13 +15,6 @@ public class godlyDragonseekerItem extends dragonseekerGeneric {
 //    private static final double minPing = DragonseekerConfig.COMMON.mythic_minPingChance.get();
 //    private static final double maxPing = DragonseekerConfig.COMMON.mythic_maxPingChance.get();
 
-    //Ping characteristic stats
-//    private static final int minSig = DragonseekerConfig.COMMON.mythic_pingCapRadius.get();
-//    private static final double pow = DragonseekerConfig.COMMON.mythic_sigPower.get();
-//    private static final Double minVol = DragonseekerConfig.COMMON.mythic_minVol.get();
-//    private static final Double maxVol = DragonseekerConfig.COMMON.mythic_maxVol.get();
-//    private static final Double minPitch = DragonseekerConfig.COMMON.mythic_minPitch.get();
-//    private static final Double maxPitch = DragonseekerConfig.COMMON.mythic_maxPitch.get();
     private static final SoundEvent negSound = SoundEvents.NOTE_BLOCK_BASS.get();
     private static final SoundEvent pingSound = SoundEvents.EXPERIENCE_ORB_PICKUP;
 
@@ -36,7 +29,7 @@ public class godlyDragonseekerItem extends dragonseekerGeneric {
 
     //Constructor
     public godlyDragonseekerItem() {
-        super(500,500,0,1,0,3.5,.05,1,.5,1,negSound,pingSound,false,false,durability,rarity,repairItem,seekerType);
+        super(400, 400, 0, 1, 200, 3.5, 0.05, 1, 0.5, 1, negSound, pingSound, false, false, durability, rarity, repairItem, seekerType);
     }
 
 }

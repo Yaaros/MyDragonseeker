@@ -34,13 +34,9 @@ public class dragonseekerItem extends dragonseekerGeneric {
     private static final Item repairItem = Items.NETHERITE_INGOT;
     private static final int seekerType = 1;
 
-    //Constructor
-//    public dragonseekerItem() {
-//        super(opDist,maxDist,minPing,maxPing,minSig,pow,minVol,maxVol,minPitch,maxPitch,negSound,pingSound,detectsCorpses,detectsTame,durability,rarity,repairItem,seekerType);
-//    }
 
     public dragonseekerItem() {
-        super(100, 200, .12, .8, 200, 1.5, .05, .05, .5, .8, negSound, pingSound, true, true, durability, rarity, repairItem, seekerType);
+        super(50, 50, .12, .8, 200, 1.5, .05, .05, .5, .8, negSound, pingSound, true, true, durability, rarity, repairItem, seekerType);
     }
 
 }

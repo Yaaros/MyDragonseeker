@@ -37,7 +37,7 @@ public class legendaryDragonseekerItem extends dragonseekerGeneric {
 
     //Constructor
     public legendaryDragonseekerItem() {
-        super(200,250,.04,.95,100,2.5,.05,.7,.5,.8,negSound,pingSound,false,false,durability,rarity,repairItem, seekerType);
+        super(200, 200, 0, 1, 150, 2.5, 0.05, 0.7, 0.5, 0.8, negSound, pingSound, false, false, durability, rarity, repairItem, seekerType);
     }
 
     //Repairing

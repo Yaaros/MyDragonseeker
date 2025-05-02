@@ -2,21 +2,34 @@ package syric.dragonseeker.item.tool;
 
 import com.github.alexthe666.iceandfire.IceAndFire;
 import com.github.alexthe666.iceandfire.entity.EntityDragonBase;
+import com.github.alexthe666.iceandfire.entity.EntityFireDragon;
+import com.github.alexthe666.iceandfire.entity.EntityIceDragon;
+import com.github.alexthe666.iceandfire.entity.EntityLightningDragon;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.Scoreboard;
+import net.minecraft.world.entity.Entity;
+
+import syric.dragonseeker.Dragonseeker;
 import syric.dragonseeker.DragonseekerConfig;
 
 import java.util.List;
+
+import static syric.dragonseeker.Dragonseeker.MODID;
 
 public class dragonseekerGeneric extends Item {
 
@@ -54,7 +67,25 @@ public class dragonseekerGeneric extends Item {
 //        );
 //    }
 
-    public dragonseekerGeneric(int opDistIn, int maxDistIn, double minPingIn, double maxPingIn, int minSigIn, double powIn, double minVolIn, double maxVolIn, double minPitchIn, double maxPitchIn, SoundEvent negSoundIn, SoundEvent pingSoundIn, boolean detectsCorpsesIn, boolean detectsTameIn, int durabilityIn, Rarity rarityIn, Item repairItemIn, int seekerTypeIn) {
+    public dragonseekerGeneric(int opDistIn,
+                               int maxDistIn,
+                               double minPingIn,
+                               double maxPingIn,
+                               int minSigIn,
+                               double powIn,
+                               double minVolIn,
+                               double maxVolIn,
+                               double minPitchIn,
+                               double maxPitchIn,
+                               SoundEvent negSoundIn,
+                               SoundEvent pingSoundIn,
+                               boolean detectsCorpsesIn,
+                               boolean detectsTameIn,
+                               int durabilityIn,
+                               Rarity rarityIn,
+                               Item repairItemIn,
+                               int seekerTypeIn)
+    {
         super(new Properties()
                 .stacksTo(1)
                 .durability(durabilityIn)
@@ -94,57 +125,22 @@ public class dragonseekerGeneric extends Item {
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
 
-//        String s1 = "Checking for entities";
-//        player.displayClientMessage(Component.literal(s1), false);
-//
-//        AABB box2 = new AABB(player.getX() - 3, player.getY() - 2, player.getZ() - 3, player.getX() + 3, player.getY() + 2, player.getZ() + 3);
-//        List<LivingEntity> allEntities = world.getNearbyEntities(LivingEntity.class, TargetingConditions.DEFAULT, player, box2);
-//        for (LivingEntity entity : allEntities) {
-//            String s2 = String.format("Entity found: %s", entity.getType());
-//            player.displayClientMessage(Component.literal(s2), false);
-//        }
-
         if (!world.isClientSide) {
-
-//            String s = "Before update, item OpDist is: " + opDist;
-//            player.displayClientMessage(Component.literal(s), false);
-
             if (isDefault) {
-//                String a = "Item stats default, updating";
-//                player.displayClientMessage(Component.literal(a), false);
                 importConfig();
                 isDefault = false;
-            } else {
-//                String b = "Item stats not default, not updating";
-//                player.displayClientMessage(Component.literal(b), false);
             }
-
-//            s = "After update, item OpDist is: " + opDist;
-//            player.displayClientMessage(Component.literal(s), false);
 
             itemstack.hurtAndBreak(1, player, (entity) -> player.broadcastBreakEvent(player.getUsedItemHand()));
 
             double distance = getDistance(world, player);
-            double chance = getPingChance(distance);
-            float vol = (float) getPingVolume(distance);
+            EntityDragonBase closest = getClosestDragon(world, player, distance);
 
-//            printDistance(distance, world, player);
-
-            RandomSource random = world.random;
-
-            double rand = random.nextDouble();
-            if (rand <= chance) {
-                //Positive result
-                world.playSound(null, player.getX(), player.getY(), player.getZ(), pingSound, SoundSource.MASTER, vol, maxPitch);
-//                String s = "PING";
-//                ITextComponent text = new StringTextComponent(s);
-//                player.sendMessage(text, player.getUUID());
+            if (closest != null) {
+                assignDragonToTeam(closest);
+                applyGlowEffect(closest, getGlowDuration());
             } else {
-                //Negative result
                 world.playSound(null, player.getX(), player.getY(), player.getZ(), negSound, SoundSource.MASTER, minVol, minPitch);
-//                String s = "PONG";
-//                ITextComponent text = new StringTextComponent(s);
-//                player.sendMessage(text, player.getUUID());
             }
 
             return InteractionResultHolder.sidedSuccess(itemstack, world.isClientSide());
@@ -152,6 +148,39 @@ public class dragonseekerGeneric extends Item {
         return InteractionResultHolder.fail(itemstack);
     }
 
+    private EntityDragonBase getClosestDragon(Level world, Player player, double distance) {
+        double x = player.getX();
+        double y = player.getY();
+        double z = player.getZ();
+        AABB box = new AABB(x - maxDist, -64, z - maxDist, x + maxDist, y + 100, z + maxDist);
+        List<EntityDragonBase> listOfTargets = world.getEntitiesOfClass(EntityDragonBase.class, box);
+
+        EntityDragonBase closest = null;
+        double minDistance = Double.MAX_VALUE;
+
+        for (EntityDragonBase target : listOfTargets) {
+            if ((detectsCorpses || !target.isModelDead()) && (detectsTame || !target.isTame())) {
+                double currentDistance = target.distanceTo(player);
+                if (currentDistance < minDistance && currentDistance <= maxDist) {
+                    minDistance = currentDistance;
+                    closest = target;
+                }
+            }
+        }
+
+        return closest;
+    }
+
+    private void applyGlowEffect(EntityDragonBase dragon, int duration) {
+        dragon.addEffect(new MobEffectInstance(MobEffects.GLOWING, duration * 20, 0, false, false));
+    }
+
+    private int getGlowDuration() {
+        if (seekerType == 1) return 3; // dragonseeker item
+        if (seekerType == 2) return 15; // epic dragonseeker item
+        if (seekerType == 3) return 60; // legendary dragonseeker item
+        return 0;
+    }
 
     //methods
     private double getDistance(Level world, Player player) {
@@ -200,30 +229,6 @@ public class dragonseekerGeneric extends Item {
         return min;
     }
 
-    private double getPingChance(double distance) {
-        double chance;
-        if (distance < opDist && distance != 0) {
-            chance = maxPing;
-        } else if ((distance > maxDist) || (distance == 0)) {
-            chance = minPing;
-        } else {
-            chance = minPing + ((maxDist-distance)/(maxDist-opDist))*(maxPing-minPing);
-        }
-        return chance;
-    }
-
-    private double getPingVolume(double distance) {
-        double vol;
-        if (distance < minSig && distance != 0) {
-            vol = maxVol;
-        } else if ((distance > maxDist) || (distance == 0)) {
-            vol = minVol;
-        } else {
-            vol = minVol + Math.pow(((maxDist-distance)/(maxDist-minSig)),pow)*(maxVol-minVol);
-        }
-        return vol;
-    }
-
     private void printDistance(double distance, Level world, Player player) {
         if (!world.isClientSide) {
             int distancenew = (int) Math.round(distance);
@@ -231,6 +236,51 @@ public class dragonseekerGeneric extends Item {
             player.displayClientMessage(Component.literal(s), false);
         }
     }
+    // 入队
+    private void assignDragonToTeam(EntityDragonBase dragon) {
+        if (dragon == null) return;
+
+        // 判断是否已经入队
+        CompoundTag data = dragon.getPersistentData();
+        if (data.contains(MODID)) {
+            CompoundTag tag = data.getCompound(MODID);
+            if (tag.getBoolean("GlowChecked")) {
+                return; // 已经入队，无需重复操作
+            }
+        }
+
+        String teamName = "";
+        if (dragon instanceof EntityFireDragon) {
+            teamName = "red_iaf";
+        } else if (dragon instanceof EntityIceDragon) {
+            teamName = "aqua_iaf";
+        } else if (dragon instanceof EntityLightningDragon) {
+            teamName = "lightning_iaf";
+        } else {
+            return; // 未知类型不处理
+        }
+
+        String entityUUID = dragon.getStringUUID(); // UUID作为玩家名加入队伍
+        Scoreboard scoreboard = dragon.level().getScoreboard();
+        PlayerTeam team = scoreboard.getPlayerTeam(teamName);
+        if (team != null) {
+            scoreboard.addPlayerToTeam(entityUUID, team);
+
+            // 标记为已处理
+            CompoundTag dragonPersistentData = dragon.getPersistentData();
+            CompoundTag tag;
+            if (!dragonPersistentData.contains(MODID)) {
+                tag = new CompoundTag();
+                dragonPersistentData.put(MODID, tag);
+            } else {
+                tag = dragonPersistentData.getCompound(MODID);
+            }
+            tag.putBoolean("GlowChecked", true);
+            // 无需调用任何“set回去”的方法，tag 是引用
+        }
+    }
+
+
 
     public void importConfig() {
         if (seekerType == 1) {
