@@ -1,10 +1,12 @@
 package syric.dragonseeker.item.tool;
 
+import com.github.alexthe666.iceandfire.IceAndFire;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
+import com.github.alexthe666.iceandfire.item.ItemDragonBone;
 
 public class dragonseekerItem extends dragonseekerGeneric {
 
@@ -29,7 +31,7 @@ public class dragonseekerItem extends dragonseekerGeneric {
 //    private static final boolean detectsCorpses = DragonseekerConfig.COMMON.basic_detectsCorpses.get();
 //    private static final boolean detectsTame = DragonseekerConfig.COMMON.basic_detectsTame.get();
 //    private static int durability = DragonseekerConfig.COMMON.basic_durability.get();
-    private static final int durability = 128;
+    private static final int durability = 64;
     private static final Rarity rarity = Rarity.UNCOMMON;
     private static final Item repairItem = Items.NETHERITE_INGOT;
     private static final int seekerType = 1;

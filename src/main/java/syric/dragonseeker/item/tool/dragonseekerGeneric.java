@@ -1,15 +1,16 @@
 package syric.dragonseeker.item.tool;
 
-import com.github.alexthe666.iceandfire.IceAndFire;
 import com.github.alexthe666.iceandfire.entity.EntityDragonBase;
 import com.github.alexthe666.iceandfire.entity.EntityFireDragon;
 import com.github.alexthe666.iceandfire.entity.EntityIceDragon;
 import com.github.alexthe666.iceandfire.entity.EntityLightningDragon;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.TickTask;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -18,16 +19,24 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
-import net.minecraft.world.entity.Entity;
 
+import net.minecraftforge.common.world.ForgeChunkManager;
 import syric.dragonseeker.Dragonseeker;
 import syric.dragonseeker.DragonseekerConfig;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 import static syric.dragonseeker.Dragonseeker.MODID;
 
@@ -125,28 +134,118 @@ public class dragonseekerGeneric extends Item {
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
 
-        if (!world.isClientSide) {
-            if (isDefault) {
-                importConfig();
-                isDefault = false;
-            }
-
-            itemstack.hurtAndBreak(1, player, (entity) -> player.broadcastBreakEvent(player.getUsedItemHand()));
-
-            double distance = getDistance(world, player);
-            EntityDragonBase closest = getClosestDragon(world, player, distance);
-
-            if (closest != null) {
-                assignDragonToTeam(closest);
-                applyGlowEffect(closest, getGlowDuration());
-            } else {
-                world.playSound(null, player.getX(), player.getY(), player.getZ(), negSound, SoundSource.MASTER, minVol, minPitch);
-            }
-
-            return InteractionResultHolder.sidedSuccess(itemstack, world.isClientSide());
+        if(world.isClientSide()||player.isSpectator()){
+            return InteractionResultHolder.pass(itemstack);
         }
-        return InteractionResultHolder.fail(itemstack);
+
+        if (player.getCooldowns().isOnCooldown(this)) {
+            return InteractionResultHolder.fail(itemstack);
+        }
+
+        if (isDefault) {
+            importConfig();
+            isDefault = false;
+        }
+
+        assert world instanceof ServerLevel;
+
+        itemstack.hurtAndBreak(1, player, (entity) -> player.broadcastBreakEvent(player.getUsedItemHand()));
+
+        double distance = getDistance(world, player);
+        EntityDragonBase closest = getClosestDragon(world, player, distance);
+
+        if (closest != null) {
+            assignDragonToTeam(closest);
+            applyGlowEffect(closest, getGlowDuration());
+            racing((ServerLevel)world,player,closest);
+
+        } else {
+            world.playSound(null, player.getX(), player.getY(), player.getZ(), negSound, SoundSource.MASTER, minVol, minPitch);
+        }
+        player.getCooldowns().addCooldown(this, 40);
+
+        return InteractionResultHolder.sidedSuccess(itemstack, world.isClientSide());
+
     }
+    private void racing(ServerLevel world, Player player, EntityDragonBase closest) {
+        // 获取玩家头部位置（Y 偏移 1.5 格，即玩家站立时的眼睛高度）
+        Vec3 playerHead = player.getEyePosition(1.0f)
+                .add(1.5, 0, 1.5)
+                .subtract(0, 0.5, 0);
+
+        // 获取龙的位置（取龙的躯干中心）
+        Vec3 dragonPos = closest.position()
+                .add(0, closest.getBbHeight() / 2, 0);
+
+        // 计算方向向量（从玩家指向龙）
+        Vec3 direction = dragonPos.subtract(playerHead).normalize();
+
+        // 激光总长度（5 * √3 ≈ 8.66 格）
+        double length = 5 * Math.sqrt(3);
+        Vec3 endPoint = playerHead.add(direction.scale(length));
+
+        // 生成激光粒子（沿直线生成密集粒子）
+        generateLaserBeam(world, playerHead, endPoint);
+    }
+
+    // 生成激光束的核心方法
+    private void generateLaserBeam(ServerLevel world, Vec3 start, Vec3 end) {
+        // 激光参数配置
+        final int particlesPerBlock = 6; // 每格生成粒子数
+        final double step = 1.0 / particlesPerBlock;
+        final double distance = start.distanceTo(end);
+        final Vec3 direction = end.subtract(start).normalize();
+
+        // 使用两种粒子增强效果
+        for (double d = 0; d <= distance; d += step) {
+            // 计算当前粒子位置
+            Vec3 currentPos = start.add(direction.scale(d));
+
+            // 生成末影核心粒子（END_ROD）
+            world.sendParticles(
+                    ParticleTypes.DRAGON_BREATH,
+                    currentPos.x,
+                    currentPos.y,
+                    currentPos.z,
+                    1, // 数量
+                    0, 0, 0, // 随机偏移
+                    0.01 // 速度
+            );
+
+            // 生成环绕火焰粒子（FLAME）
+            if (d % 0.5 < step) { // 每 0.5 格生成一次
+                generateHaloParticles(world, currentPos, direction);
+            }
+        }
+    }
+
+    // 生成环绕光晕粒子
+    private void generateHaloParticles(ServerLevel world, Vec3 center, Vec3 direction) {
+        // 生成垂直于激光方向的随机偏移
+        Vec3 perpendicular = direction.y == 0 ?
+                new Vec3(0, 1, 0) : // 如果方向水平，取垂直 Y 轴
+                new Vec3(direction.y, -direction.x, 0).normalize();
+
+        final double radius = 0.2;
+        final int haloParticles = 4;
+
+        for (int i = 0; i < haloParticles; i++) {
+            double angle = i * Math.PI * 2 / haloParticles;
+            Vec3 offset = perpendicular.scale(radius * Math.cos(angle))
+                    .add(new Vec3(0, radius * Math.sin(angle), 0));
+
+            world.sendParticles(
+                    ParticleTypes.FLAME,
+                    center.x + offset.x,
+                    center.y + offset.y,
+                    center.z + offset.z,
+                    1,
+                    0, 0, 0,
+                    0.05
+            );
+        }
+    }
+
 
     private EntityDragonBase getClosestDragon(Level world, Player player, double distance) {
         double x = player.getX();
@@ -197,7 +296,6 @@ public class dragonseekerGeneric extends Item {
 //        List<LivingEntity> allEntities = world.getNearbyEntities(LivingEntity.class, TargetingConditions.DEFAULT, player, box);
 //        s = "Identified " + allEntities.size() + " total entities.";
 //        player.displayClientMessage(Component.literal(s), false);
-
 
         float min = 0;
         EntityDragonBase closest = null;
