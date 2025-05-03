@@ -1,7 +1,7 @@
 {
   "type": "minecraft:smithing_transform",
   "addition": {
-    "item": "minecraft:nether_star"
+    "tag": "iceandfire:dragon_bloods"
   },
   "base": {
     "item": "dragonseeker:dragonseeker"
@@ -10,6 +10,6 @@
     "item": "dragonseeker:epic_dragonseeker"
   },
   "template": {
-    "item": "minecraft:netherite_upgrade_smithing_template"
+    "item": "iceandfire:pixie_jar_empty"
   }
 }

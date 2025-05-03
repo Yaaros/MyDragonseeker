@@ -1,8 +1,10 @@
 package syric.dragonseeker.item.tool;
 
+import com.github.alexthe666.iceandfire.item.IafItemRegistry;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
 
@@ -29,15 +31,25 @@ public class epicDragonseekerItem extends dragonseekerGeneric {
 //    private static final boolean detectsCorpses = DragonseekerConfig.COMMON.epic_detectsCorpses.get();
 //    private static final boolean detectsTame = DragonseekerConfig.COMMON.epic_detectsTame.get();
 //    private static final int durability = DragonseekerConfig.COMMON.epic_durability.get();
-    private static final int durability = 256;
+    private static final int durability = 128;
     private static final Rarity rarity = Rarity.RARE;
-    private static final Item repairItem = Items.NETHERITE_INGOT;
+    private static final Item repairItem = IafItemRegistry.FIRE_DRAGON_BLOOD.get();
     private static final int seekerType = 2;
 
 
     //Constructor
     public epicDragonseekerItem() {
         super(100, 100, 0, 1, 100, 1.5, 0.05, 0.4, 0.5, 0.8, negSound, pingSound, true, false, durability, rarity, repairItem, seekerType);
+    }
+
+    @Override
+    public boolean isValidRepairItem(ItemStack toRepair, ItemStack repair) {
+        return ((repair.getItem() == IafItemRegistry.FIRE_DRAGON_BLOOD.get())
+             || (repair.getItem() == IafItemRegistry.ICE_DRAGON_BLOOD.get())
+             || (repair.getItem() == IafItemRegistry.LIGHTNING_DRAGON_BLOOD.get())
+             || (repair.getItem() == IafItemRegistry.FIRE_DRAGON_FLESH.get())
+             || (repair.getItem() == IafItemRegistry.ICE_DRAGON_FLESH.get())
+             || (repair.getItem() == IafItemRegistry.LIGHTNING_DRAGON_FLESH.get()));
     }
 
 }

@@ -30,7 +30,7 @@ public class legendaryDragonseekerItem extends dragonseekerGeneric {
 //    private static final boolean detectsCorpses = DragonseekerConfig.COMMON.legendary_detectsCorpses.get();
 //    private static final boolean detectsTame = DragonseekerConfig.COMMON.legendary_detectsTame.get();
 //    private static final int durability = DragonseekerConfig.COMMON.legendary_durability.get();
-    private static final int durability = 512;
+    private static final int durability = 256;
     private static final Rarity rarity = Rarity.RARE;
     private static final Item repairItem = IafItemRegistry.DRAGONSTEEL_FIRE_INGOT.get();
     private static final int seekerType = 3;
@@ -43,7 +43,9 @@ public class legendaryDragonseekerItem extends dragonseekerGeneric {
     //Repairing
     @Override
     public boolean isValidRepairItem(ItemStack toRepair, ItemStack repair) {
-        return ((repair.getItem() == IafItemRegistry.DRAGONSTEEL_FIRE_INGOT.get()) || (repair.getItem() == IafItemRegistry.DRAGONSTEEL_ICE_INGOT.get()) || (repair.getItem() == IafItemRegistry.DRAGONSTEEL_LIGHTNING_INGOT.get()));
+        return ((repair.getItem() == IafItemRegistry.DRAGONSTEEL_FIRE_INGOT.get())
+             || (repair.getItem() == IafItemRegistry.DRAGONSTEEL_ICE_INGOT.get())
+             || (repair.getItem() == IafItemRegistry.DRAGONSTEEL_LIGHTNING_INGOT.get()));
     }
 
 }

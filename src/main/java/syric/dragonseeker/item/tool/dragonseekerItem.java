@@ -6,7 +6,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
-import com.github.alexthe666.iceandfire.item.ItemDragonBone;
+import com.github.alexthe666.iceandfire.item.IafItemRegistry;
 
 public class dragonseekerItem extends dragonseekerGeneric {
 
@@ -33,7 +33,7 @@ public class dragonseekerItem extends dragonseekerGeneric {
 //    private static int durability = DragonseekerConfig.COMMON.basic_durability.get();
     private static final int durability = 64;
     private static final Rarity rarity = Rarity.UNCOMMON;
-    private static final Item repairItem = Items.NETHERITE_INGOT;
+    private static final Item repairItem = IafItemRegistry.DRAGON_BONE.get();
     private static final int seekerType = 1;
 
 

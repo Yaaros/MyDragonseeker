@@ -1,8 +1,10 @@
 package syric.dragonseeker.item.tool;
 
+import com.github.alexthe666.iceandfire.item.IafItemRegistry;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
 
@@ -24,12 +26,21 @@ public class godlyDragonseekerItem extends dragonseekerGeneric {
 //    private static final int durability = DragonseekerConfig.COMMON.mythic_durability.get();
     private static final int durability = -1;
     private static final Rarity rarity = Rarity.EPIC;
-    private static final Item repairItem = Items.NETHERITE_INGOT;
+    private static final Item repairItem = Items.NETHERITE_SWORD;
     private static final int seekerType = 4;
 
     //Constructor
     public godlyDragonseekerItem() {
         super(400, 400, 0, 1, 200, 3.5, 0.05, 1, 0.5, 1, negSound, pingSound, false, false, durability, rarity, repairItem, seekerType);
+    }
+
+    @Override
+    public boolean isValidRepairItem(ItemStack toRepair, ItemStack repair) {
+        return ((repair.getItem() == Items.NETHERITE_SWORD)
+             || (repair.getItem() == IafItemRegistry.FIRE_DRAGON_HEART.get())
+             || (repair.getItem() == IafItemRegistry.ICE_DRAGON_HEART.get())
+             || (repair.getItem() == IafItemRegistry.LIGHTNING_DRAGON_HEART.get()));
+
     }
 
 }

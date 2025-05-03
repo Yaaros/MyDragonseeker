@@ -10,11 +10,11 @@
   {
     "x":
     {
-      "item": "iceandfire:dragonsteel_ice_ingot"
+      "tag": "forge:storage_blocks/scales/dragon/ice"
     },
     "a":
     {
-      "tag": "iceandfire:dragon_skulls"
+      "item": "iceandfire:ice_dragon_heart"
     }
   },
   "result":
